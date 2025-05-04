@@ -143,13 +143,17 @@ let
                     # Make sure we don't import nixpkgs again if not
                     # necessary. We can't use `config.nixpkgs.config`
                     # because that triggers infinite recursion.
-                    if (hostConfig.nixpkgs.config == { }) then
+                    if (hostConfig.nixpkgs.config == { } && hostConfig.nixpkgs.overlays == [ ]) then
                       selectedNixpkgs
                     else
                       import patchedChannel
                         {
                           inherit (host) system;
-                          inherit (selectedNixpkgs) overlays;
+                          overlays = selectedNixpkgs.overlays ++ (
+                            if (options ? nixpkgs.overlays) then
+                              hostConfig.nixpkgs.overlays
+                            else [ ]
+                          );
                           config = selectedNixpkgs.config // hostConfig.nixpkgs.config;
                         } // { inherit (selectedNixpkgs) name input; };
                   nixpkgs.config = lib.mkForce { };
